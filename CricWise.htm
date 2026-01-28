@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="Gadash / Akila DJ with Gemini AI :)">
+    <meta name="copyright" content="Gadash / Akila DJ with Gemini AI :)">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CricWise - Cricket Scoring App by Gadash - Draft 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg-page: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --border: #334155;
+            --btn-gray: #334155;
+            --input-bg: #020617;
+            /* Colors */
+            --clr-wkt: #ef4444;
+            --clr-wide: #3b82f6;
+            --clr-no: #FF80FF; 
+            --clr-boundary: #10b981;
+            
+            /* Fix Button Colors - Dark Theme */
+            --clr-fix-bg: #7c2d12; 
+            
+            /* Scaling Button Specifics - Dark Mode */
+            --scale-btn-border: #1e293b; 
+            --scale-btn-text: #94a3b8;
+
+            /* Blended Button Colors - Dark Mode */
+            --btn-boundary-text: #bbf7d0; 
+            --btn-boundary-bg: rgba(16, 185, 129, 0.2);
+            --btn-wkt-text: #fee2e2; 
+            --btn-wkt-bg: rgba(239, 68, 68, 0.2);
+
+            /* Scaling */
+            --app-scale: 1.0;
+            --half-scale: 1.0;
+        }
+
+        [data-theme="light"] {
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-dim: #64748b;
+            --border: #e2e8f0;
+            --btn-gray: #f1f5f9;
+            --input-bg: #f8fafc;
+            --clr-boundary: #059669;
+
+            /* Fix Button Colors - Light Theme */
+            --clr-fix-bg: #fb923c; 
+
+            /* Scaling Button Specifics - Light Mode */
+            --scale-btn-border: #e2e8f0;
+            --scale-btn-text: #cbd5e1;
+            
+            /* Blended Button Colors - Light Mode */
+            --btn-boundary-text: #064e3b;
+            --btn-boundary-bg: rgba(16, 185, 129, 0.15);
+            --btn-wkt-text: #7f1d1d;
+            --btn-wkt-bg: rgba(239, 68, 68, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            transition: background 0.3s, color 0.3s;
+            overflow: hidden;
+            height: 100dvh;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .scale-node { font-size: calc(1em * var(--half-scale)); }
+        .view { height: 100%; display: flex; flex-direction: column; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; transition: background 0.2s; }
+        
+        .ball-circle {
+            width: calc(52px * (1 + (var(--app-scale) - 1) * 0.5));
+            height: calc(52px * (1 + (var(--app-scale) - 1) * 0.5));
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; border: 2px solid var(--border);
+            background: var(--bg-card); font-weight: bold;
+            position: relative; flex-shrink: 0;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .extra-label { font-size: calc(8.8px * var(--app-scale)); position: absolute; top: 12%; font-weight: 900; line-height: 1; letter-spacing: 0.05em; }
+        .wkt-label { font-size: calc(8px * var(--app-scale)); position: absolute; bottom: 12%; font-weight: 900; line-height: 1; letter-spacing: 0.05em; }
+        .extra-score { font-size: calc(16.5px * var(--app-scale)); margin-top: 1px; font-weight: 900; }
+
+        .btn-tap { transition: all 0.1s; border-radius: 14px; }
+        .btn-tap:active { transform: scale(0.95); filter: brightness(0.8); }
+        .btn-selected { border: 3px solid #f97316 !important; background: var(--primary) !important; color: white !important; }
+        .btn-selected-grey { border: 3px solid #cbd5e1 !important; background: #475569 !important; color: white !important; }
+
+        #custom-run::placeholder { font-size: 0.6em; font-weight: normal; }
+
+        .scroll-container { flex: 1; overflow-y: auto; padding-bottom: 20px; scrollbar-width: none; scroll-behavior: smooth; }
+        .scroll-container::-webkit-scrollbar { display: none; }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(8px); }
+        
+        .status-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 12px; font-weight: bold; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideDown 0.3s ease-out; }
+        
+        input[type="number"] { background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); text-align: center; }
+        
+        .confirm-over-btn { border: 3px solid rgba(255, 255, 255, 0.7) !important; animation: pulse-border 1.5s infinite; }
+        
+        @keyframes pulse-border { 0% { border-color: rgba(255, 255, 255, 0.3); } 50% { border-color: rgba(255, 255, 255, 1); } 100% { border-color: rgba(255, 255, 255, 0.3); } }
+        @keyframes slideDown { from { top: -60px; } to { top: 20px; } }
+
+        .scale-btn-ui { border-color: var(--scale-btn-border) !important; color: var(--scale-btn-text) !important; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div id="app" class="w-full max-w-md mx-auto h-full flex flex-col relative p-4">
+        
+        <div id="toast" class="hidden status-msg">Score Updated!</div>
+
+        <!-- SCALING CONTROLS -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-1">
+            <button onclick="changeScale(-0.01)" class="w-10 h-7 bg-btn-gray border rounded-lg text-[15px] font-bold btn-tap flex items-center justify-center scale-btn-ui">-</button>
+            <button onclick="resetScale()" id="scale-label" class="w-14 h-7 bg-btn-gray border rounded-lg text-[9px] font-black uppercase btn-tap flex items-center justify-center scale-btn-ui">100%</button>
+            <button onclick="changeScale(0.01)" class="w-10 h-7 bg-btn-gray border rounded-lg text-[15px] font-bold btn-tap flex items-center justify-center scale-btn-ui">+</button>
+        </div>
+
+        <!-- TOP BAR UI -->
+        <button id="fix-btn" onclick="openFixModal()" class="hidden absolute top-4 left-4 z-50 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg btn-tap" style="background-color: var(--clr-fix-bg)">Modify</button>
+        <button id="inn1-preview-btn" onclick="showInn1Overview()" class="hidden absolute top-4 right-4 z-50 bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg btn-tap">1ST INN</button>
+
+        <!-- VIEW: SETUP -->
+        <div id="view-setup" class="view flex flex-col justify-center gap-6 pt-10">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-emerald-400 mb-2">CricWise Scoring App</h1>
+                <p class="text-dim text-sm tracking-widest uppercase font-bold">Cricket Umpire Assist App,<br>Draft 1, by Gadash</p>
+            </div>
+
+            <div class="card p-6 space-y-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-2">Theme</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setTheme('dark')" id="t-dark" class="py-3 rounded-xl border-2 font-bold btn-tap">Dark</button>
+                        <button onclick="setTheme('light')" id="t-light" class="py-3 rounded-xl border-2 font-bold btn-tap">Light</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-[12px] text-dim font-black uppercase">Overs</span>
+                        <input type="number" id="input-overs" value="5" min="1" max="99" 
+                               onkeydown="return event.keyCode !== 69" 
+                               oninput="validateNumberInput(this, 1, 99)"
+                               class="w-full p-4 rounded-xl text-2xl font-black outline-none">
+                    </div>
+                    <div>
+                        <span class="text-[12px] text-dim font-black uppercase">Balls per Over</span>
+                        <input type="number" id="input-balls" value="6" min="1" max="9" 
+                               onkeydown="return event.keyCode !== 69" 
+                               oninput="validateNumberInput(this, 1, 9)"
+                               class="w-full p-4 rounded-xl text-2xl font-black outline-none">
+                    </div>
+                </div>
+                <button onclick="startMatch()" class="w-full py-5 bg-emerald-500 text-white font-black text-2xl rounded-2xl shadow-xl btn-tap">
+                    START MATCH
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW: SCORING -->
+        <div id="view-scoring" class="view hidden">
+            <div class="text-center mt-14 mb-2">
+                <div id="inning-label" class="text-[11px] font-black opacity-50 uppercase tracking-widest mb-1 scale-node">1st Innings</div>
+                <div id="score-display" class="text-6xl font-bold leading-none tracking-tighter scale-node">0-0</div>
+                <div id="overs-display" class="text-3xl font-bold text-emerald-500 mt-2 scale-node">Overs: 0.0 / 5</div>
+                
+                <div id="target-box" class="hidden mt-3 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/20 scale-node">
+                    <span class="text-sm font-bold text-dim">Target: <b id="target-runs" class="text-white text-lg">0</b> | Need <b id="need-runs" class="text-emerald-500 text-lg">0</b> from <b id="need-balls" class="text-emerald-500 text-lg">0</b> balls</span>
+                </div>
+                <div class="border-b border-border mt-4"></div>
+            </div>
+
+            <div class="scroll-container" id="visuals-container">
+                <div id="overs-history-list" class="flex flex-col gap-4"></div>
+            </div>
+
+            <div class="mt-2 space-y-3 pt-2 border-t border-border">
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="selectScore(0)" class="score-btn py-4 bg-btn-gray text-xl font-black rounded-xl border-2 border-transparent scale-node">0</button>
+                    <button onclick="selectScore(1)" class="score-btn py-4 bg-btn-gray text-xl font-black rounded-xl border-2 border-transparent scale-node">1</button>
+                    <button onclick="selectScore(2)" class="score-btn py-4 bg-btn-gray text-xl font-black rounded-xl border-2 border-transparent scale-node">2</button>
+                    <button onclick="selectScore(3)" class="score-btn py-4 bg-btn-gray text-xl font-black rounded-xl border-2 border-transparent scale-node">3</button>
+                </div>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="selectScore(4)" style="background-color: var(--btn-boundary-bg); color: var(--btn-boundary-text);" class="score-btn py-4 text-xl font-black rounded-xl border-2 border-transparent scale-node">4</button>
+                    <button onclick="selectScore(5)" class="score-btn py-4 bg-btn-gray text-xl font-black rounded-xl border-2 border-transparent scale-node">5</button>
+                    <button onclick="selectScore(6)" style="background-color: var(--btn-boundary-bg); color: var(--btn-boundary-text);" class="score-btn py-4 text-xl font-black rounded-xl border-2 border-transparent scale-node">6</button>
+                    <div class="relative w-full h-full">
+                        <input type="number" id="custom-run" placeholder="CUSTOM" onfocus="selectScore('custom')" 
+                               class="score-btn w-full h-full rounded-xl text-center font-black outline-none border-2 bg-btn-gray border-transparent placeholder:text-dim placeholder:uppercase" 
+                               style="font-size: 1em">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="btn-wkt" onclick="toggleWicket()" style="background-color: var(--btn-wkt-bg); color: var(--btn-wkt-text);" class="py-4 text-sm font-black rounded-xl uppercase border-2 border-transparent scale-node">Wicket</button>
+                    <button id="btn-no" onclick="toggleExtra('N')" class="py-4 bg-btn-gray text-sm font-black rounded-xl uppercase border-2 border-transparent scale-node">No Ball</button>
+                    <button id="btn-wide" onclick="toggleExtra('W')" class="py-4 bg-btn-gray text-sm font-black rounded-xl uppercase border-2 border-transparent scale-node">Wide</button>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="confirmEndInningsModal()" class="w-28 py-5 bg-btn-gray text-[12px] rounded-2xl uppercase tracking-tighter font-bold opacity-80 btn-tap scale-node">End Innings</button>
+                    <button onclick="confirmUndo()" class="w-14 py-5 bg-btn-gray flex items-center justify-center rounded-2xl btn-tap">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    </button>
+                    <button id="btn-confirm" disabled onclick="processBall()" class="flex-[2.5] py-5 bg-emerald-600 text-white font-black text-base rounded-2xl shadow-lg disabled:opacity-20 btn-tap border-2 border-transparent scale-node">Confirm</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SUMMARY -->
+        <div id="view-summary" class="view hidden">
+            <div class="scroll-container px-2 pt-14">
+                <div class="text-center mb-6">
+                    <div id="summary-trophy" class="text-5xl mb-2">??</div>
+                    <h2 id="winner-text" class="text-3xl font-black text-emerald-500 uppercase leading-tight px-4 scale-node">Match Over</h2>
+                    <p id="winner-desc" class="text-dim font-bold mt-1 px-4 scale-node">Calculating results...</p>
+                </div>
+                <div id="summary-main-history" class="space-y-4"></div>
+                <div class="py-10 space-y-4">
+                    <button id="btn-start-inn2" onclick="setupSecondInnings()" class="hidden w-full py-5 bg-emerald-500 text-white font-black text-xl rounded-2xl btn-tap scale-node">Start 2nd Innings</button>
+                    <div id="post-match-controls" class="hidden space-y-4">
+                        <button onclick="startOver()" class="w-full py-5 bg-emerald-500 text-white font-black text-xl rounded-2xl btn-tap scale-node">New Match</button>
+                        <button onclick="openReviewBoard()" class="w-full py-4 bg-btn-gray text-dim font-bold rounded-2xl btn-tap scale-node">Review Final Board</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: REVIEW BOARD -->
+        <div id="view-review" class="view hidden">
+            <div class="p-6 flex justify-between items-center border-b border-border pt-14">
+                <h2 class="text-xl font-black text-emerald-500 uppercase scale-node">Match Review</h2>
+                <button onclick="showView('view-summary')" class="text-xs font-bold text-dim bg-btn-gray px-4 py-2 rounded-xl scale-node">Go Back</button>
+            </div>
+            <div class="scroll-container p-4" id="review-board-content"></div>
+            <div class="p-4 border-t border-border">
+                <button onclick="startOver()" class="w-full py-4 bg-emerald-500 text-white font-black rounded-xl scale-node">Start New Match</button>
+            </div>
+        </div>
+
+        <!-- MODALS -->
+        <div id="modal-generic" class="overlay hidden">
+            <div class="card p-8 w-full max-w-[320px] text-center space-y-6 border-2">
+                <h3 id="modal-title" class="text-2xl font-black scale-node">Confirmation</h3>
+                <p id="modal-text" class="text-dim text-sm scale-node"></p>
+                <div class="flex gap-4">
+                    <button id="modal-cancel-btn" onclick="closeModal('modal-generic')" class="flex-1 py-4 bg-btn-gray rounded-xl font-bold scale-node">No</button>
+                    <button id="modal-confirm-btn" class="flex-1 py-4 bg-emerald-500 text-white rounded-xl font-bold scale-node">Yes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: END INNINGS REASON -->
+        <div id="modal-inning-end" class="overlay hidden">
+            <div class="card p-8 w-full max-w-[360px] text-center space-y-4 border-2 bg-slate-800 border-slate-600">
+                <h3 class="text-xl font-black text-white scale-node">End Inning?</h3>
+                <p class="text-slate-400 text-sm scale-node">Do you want to end the inning? Choose the reason, or cancel.</p>
+                <div class="flex flex-col gap-2">
+                    <button onclick="finishInningsManual('all-out')" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold scale-node">Yes, End. All Out.</button>
+                    <button onclick="finishInningsManual('other')" class="w-full py-4 bg-slate-600 hover:bg-slate-500 text-white rounded-xl font-bold scale-node">Yes, End (Other Reasons).</button>
+                    <div class="flex gap-2">
+                        <button onclick="closeModal('modal-inning-end')" class="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl font-bold scale-node">No</button>
+                        <button onclick="closeModal('modal-inning-end')" class="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl font-bold scale-node">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: INN 1 OVERVIEW -->
+        <div id="modal-inn1-summary" class="overlay hidden">
+            <div class="card w-full max-w-sm flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-border flex justify-between items-center">
+                    <h3 class="text-xl font-black text-emerald-500 uppercase scale-node">Inn 1 Overview</h3>
+                    <button onclick="closeModal('modal-inn1-summary')" class="p-2 opacity-50">?</button>
+                </div>
+                <div id="inn1-summary-content" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
+            </div>
+        </div>
+
+        <div id="modal-fix" class="overlay hidden">
+            <div class="card p-6 w-full space-y-4 shadow-2xl">
+                <h3 class="text-xl font-black text-orange-500 uppercase tracking-tight scale-node">Manual Score Fix</h3>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] text-dim uppercase font-black">Current Runs</label>
+                            <input type="number" id="fix-runs" class="w-full p-4 rounded-xl font-black text-xl scale-node">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-dim uppercase font-black">Current Wkts</label>
+                            <input type="number" id="fix-wkts" class="w-full p-4 rounded-xl font-black text-xl scale-node">
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <label class="text-[10px] text-dim uppercase font-black">Overs Done</label>
+                            <input type="number" id="fix-overs" class="w-full p-4 rounded-xl font-black text-xl scale-node">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] text-dim uppercase font-black">Balls in Cur.</label>
+                            <input type="number" id="fix-balls" class="w-full p-4 rounded-xl font-black text-xl scale-node">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-3 pt-2">
+                    <button onclick="applyFix()" class="w-full py-4 bg-orange-600 text-white rounded-xl font-black text-lg btn-tap scale-node">Apply All Fixes</button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="cancelFix()" class="py-4 bg-btn-gray rounded-xl font-bold text-dim uppercase text-[24px] btn-tap scale-node">Cancel Fix</button>
+                        <button onclick="confirmResetFromFix()" class="py-4 bg-red-600/20 text-red-500 rounded-xl font-bold text-[35px] uppercase leading-none px-2 btn-tap scale-node">New Match</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- SCALING ENGINE ---
+        let currentScale = 1.0;
+        function changeScale(delta) {
+            currentScale = parseFloat((currentScale + delta).toFixed(2));
+            updateAppScale();
+        }
+        function resetScale() {
+            currentScale = 1.0;
+            updateAppScale();
+        }
+        function updateAppScale() {
+            document.documentElement.style.setProperty('--app-scale', currentScale);
+            const moderatedScale = 1 + (currentScale - 1) * 0.5;
+            document.documentElement.style.setProperty('--half-scale', moderatedScale);
+            document.getElementById('scale-label').innerText = Math.round(currentScale * 100) + '%';
+            if (match.innings[match.currentInning - 1].ballHistory.length > 0 || match.innings[match.currentInning - 1].completedOvers.length > 0) {
+                renderVisuals();
+            }
+        }
+
+        // --- AUDIO ENGINE ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.5) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const SFX = {
+            fix: () => playTone(440, 0.2, 'sine', 0.35), 
+            confirm: () => {
+                playTone(440, 0.1, 'sine', 0.3);
+                setTimeout(() => playTone(554, 0.1, 'sine', 0.3), 80);
+                setTimeout(() => playTone(659, 0.1, 'sine', 0.3), 160);
+            },
+            cancel: () => { }, 
+            updateHarsh: () => {
+                playTone(220, 0.2, 'square', 0.6);
+                setTimeout(() => playTone(220, 0.2, 'square', 0.6), 150);
+                setTimeout(() => playTone(180, 0.4, 'square', 0.9), 300);
+            },
+            endInningManual: () => {
+                playTone(330, 0.15, 'sawtooth', 0.6);
+                setTimeout(() => playTone(220, 0.4, 'sawtooth', 0.6), 160);
+            },
+            newMatchConfirm: () => {
+                playTone(523.25, 0.1, 'sine', 0.7); 
+                setTimeout(() => playTone(659.25, 0.1, 'sine', 0.7), 100); 
+                setTimeout(() => playTone(783.99, 0.2, 'sine', 0.8), 200); 
+            },
+            pop: () => playTone(800, 0.1, 'sine', 0.05)
+        };
+
+        // --- MATCH STATE ---
+        const WICKET_LIMIT = 99;
+        let match = {
+            totalOvers: 5,
+            ballsPerOver: 6,
+            currentInning: 1,
+            innings: [
+                { runs: 0, wickets: 0, completedOvers: [], currentOver: [], ballHistory: [] },
+                { runs: 0, wickets: 0, completedOvers: [], currentOver: [], ballHistory: [] }
+            ]
+        };
+
+        let selScore = null;
+        let selExtra = null;
+        let selWkt = false;
+
+        function setTheme(t) {
+            document.body.setAttribute('data-theme', t);
+            const updateBtn = (id, active) => {
+                const b = document.getElementById(id);
+                if(!b) return;
+                b.className = `py-3 rounded-xl border-2 font-bold btn-tap ${active ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500' : 'border-transparent bg-btn-gray text-dim'}`;
+            };
+            updateBtn('t-dark', t === 'dark');
+            updateBtn('t-light', t === 'light');
+        }
+        setTheme('dark');
+
+        function validateNumberInput(el, min, max) {
+            let val = parseInt(el.value);
+            if(el.value === "") return;
+            if(val < min) el.value = min;
+            if(val > max) el.value = max;
+        }
+
+        function startMatch() {
+            initAudio();
+            match.totalOvers = parseInt(document.getElementById('input-overs').value) || 5;
+            match.ballsPerOver = parseInt(document.getElementById('input-balls').value) || 6;
+            showView('view-scoring');
+            document.getElementById('fix-btn').classList.remove('hidden');
+            updateUI();
+        }
+
+        function selectScore(val) {
+            initAudio();
+            selScore = val;
+            updateButtonStyles();
+            document.getElementById('btn-confirm').disabled = false;
+            updateConfirmButtonText();
+        }
+
+        function toggleExtra(type) {
+            selExtra = selExtra === type ? null : type;
+            updateButtonStyles();
+        }
+
+        function toggleWicket() {
+            selWkt = !selWkt;
+            updateButtonStyles();
+        }
+
+        function updateConfirmButtonText() {
+            const inn = match.innings[match.currentInning - 1];
+            const legals = inn.currentOver.filter(b => b.isLegal).length;
+            const btn = document.getElementById('btn-confirm');
+            
+            const isLastOver = inn.completedOvers.length === (match.totalOvers - 1);
+            const isLastBall = (legals + 1) === match.ballsPerOver;
+
+            if (selExtra === null && isLastBall) {
+                if (isLastOver) {
+                    btn.innerText = "Confirm & End Inning";
+                } else {
+                    btn.innerText = "Confirm & End Over";
+                }
+                btn.classList.add('confirm-over-btn');
+            } else {
+                btn.innerText = "Confirm";
+                btn.classList.remove('confirm-over-btn');
+            }
+        }
+
+        function updateButtonStyles() {
+            document.querySelectorAll('.score-btn').forEach(btn => {
+                btn.classList.remove('btn-selected', 'btn-selected-grey');
+                if (selScore !== 'custom' && parseInt(btn.innerText) === selScore) {
+                    btn.classList.add('btn-selected');
+                }
+                if (selScore === 'custom' && btn.id === 'custom-run') {
+                    btn.classList.add('btn-selected-grey');
+                }
+            });
+            document.getElementById('btn-wide').classList.toggle('btn-selected', selExtra === 'W');
+            document.getElementById('btn-no').classList.toggle('btn-selected', selExtra === 'N');
+            document.getElementById('btn-wkt').classList.toggle('btn-selected', selWkt);
+            updateConfirmButtonText();
+        }
+
+        function processBall() {
+            let runs = selScore === 'custom' ? (parseInt(document.getElementById('custom-run').value) || 0) : selScore;
+            
+            const inn = match.innings[match.currentInning - 1];
+            const ball = {
+                runs: runs,
+                isWide: selExtra === 'W',
+                isNo: selExtra === 'N',
+                isWkt: selWkt,
+                isLegal: selExtra === null,
+                totalForBall: runs + (selExtra ? 1 : 0),
+                isOverridden: false,
+                isCustom: selScore === 'custom'
+            };
+
+            const isLastBall = (inn.currentOver.filter(b => b.isLegal).length + 1) === match.ballsPerOver;
+            const isLastOver = inn.completedOvers.length === (match.totalOvers - 1);
+
+            inn.runs += ball.totalForBall;
+            if (ball.isWkt) inn.wickets += 1;
+            inn.currentOver.push(ball);
+            inn.ballHistory.push(ball);
+
+            SFX.pop();
+
+            const legals = inn.currentOver.filter(b => b.isLegal).length;
+            
+            if (legals >= match.ballsPerOver) {
+                 if (isLastOver) {
+                     finishInnings();
+                 } else {
+                     forceEndOver();
+                 }
+            } else {
+                if (inn.wickets >= WICKET_LIMIT) {
+                    finishInnings();
+                } else if (match.currentInning === 2 && inn.runs > match.innings[0].runs) {
+                    finishInnings();
+                }
+            }
+
+            resetControls();
+            updateUI();
+        }
+
+        function forceEndOver() {
+            const inn = match.innings[match.currentInning - 1];
+            if (inn.currentOver.length > 0) {
+                inn.completedOvers.push([...inn.currentOver]);
+                inn.currentOver = [];
+            }
+            closeModal('modal-generic');
+            
+            if (inn.completedOvers.length >= match.totalOvers || inn.wickets >= WICKET_LIMIT || (match.currentInning === 2 && inn.runs > match.innings[0].runs)) {
+                finishInnings();
+            }
+
+            updateUI();
+            autoScrollHistory();
+        }
+
+        function confirmEndInningsModal() {
+            document.getElementById('modal-inning-end').classList.remove('hidden');
+        }
+
+        function finishInningsManual(reason) {
+            closeModal('modal-inning-end');
+            SFX.endInningManual(); 
+            finishInnings();
+        }
+
+        function autoScrollHistory() {
+            const container = document.getElementById('visuals-container');
+            setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+        }
+
+        function confirmUndo() {
+            const inn = match.innings[match.currentInning - 1];
+            if (inn.ballHistory.length === 0 && inn.completedOvers.length === 0) return;
+            openModal("Undo Ball", "Do you want to undo the last ball score?", () => {
+                undoLastBall();
+                SFX.cancel();
+            });
+        }
+
+        function undoLastBall() {
+            const inn = match.innings[match.currentInning - 1];
+            if (inn.currentOver.length === 0 && inn.completedOvers.length > 0) {
+                inn.currentOver = inn.completedOvers.pop();
+            }
+            if (inn.currentOver.length > 0) {
+                const lastBall = inn.currentOver.pop();
+                inn.ballHistory.pop();
+                inn.runs -= lastBall.totalForBall;
+                if (lastBall.isWkt) inn.wickets -= 1;
+            }
+            updateUI();
+            showToast("Action Undone");
+            closeModal('modal-generic');
+        }
+
+        function calculateRemainingBalls() {
+            const inn = match.innings[match.currentInning - 1];
+            const completedCount = inn.completedOvers.length;
+            const currentLegals = inn.currentOver.filter(b => b.isLegal).length;
+            const oversLeftAfterThis = Math.max(0, match.totalOvers - completedCount - 1);
+            const ballsLeftInThis = Math.max(0, match.ballsPerOver - currentLegals);
+            return (oversLeftAfterThis * match.ballsPerOver) + ballsLeftInThis;
+        }
+
+        function finishInnings() {
+            const inn1 = match.innings[0];
+            const inn2 = match.innings[1];
+            showView('view-summary');
+            renderFullBreakdown(document.getElementById('summary-main-history'));
+            const tro = document.getElementById('summary-trophy');
+            const winText = document.getElementById('winner-text');
+            const winDesc = document.getElementById('winner-desc');
+            const btnInn2 = document.getElementById('btn-start-inn2');
+            const postControls = document.getElementById('post-match-controls');
+
+            if (match.currentInning === 1) {
+                tro.classList.add('hidden');
+                winText.innerText = "Innings Complete";
+                winDesc.innerText = `Target: ${inn1.runs + 1}`;
+                btnInn2.classList.remove('hidden');
+                postControls.classList.add('hidden');
+            } else {
+                tro.classList.remove('hidden');
+                btnInn2.classList.add('hidden');
+                postControls.classList.remove('hidden');
+
+                if (inn2.runs > inn1.runs) {
+                    winText.innerText = "Team B Won!";
+                    const ballsRemaining = calculateRemainingBalls();
+                    winDesc.innerText = `With ${ballsRemaining} balls remaining`;
+                } else if (inn2.runs < inn1.runs) {
+                    winText.innerText = "Team A Won!";
+                    winDesc.innerText = `Match Concluded`;
+                } else {
+                    winText.innerText = "Match Drawn!";
+                    winDesc.innerText = "Scores are level";
+                }
+            }
+        }
+
+        function setupSecondInnings() {
+            match.currentInning = 2;
+            showView('view-scoring');
+            document.getElementById('inning-label').innerText = "2nd Innings";
+            document.getElementById('target-box').classList.remove('hidden');
+            document.getElementById('target-runs').innerText = match.innings[0].runs + 1;
+            document.getElementById('inn1-preview-btn').classList.remove('hidden');
+            updateUI();
+        }
+
+        function renderFullBreakdown(container, inningFilter = null) {
+            container.innerHTML = '';
+            match.innings.forEach((inn, idx) => {
+                if (inningFilter !== null && (idx + 1) !== inningFilter) return;
+                if (inn.ballHistory.length === 0 && inn.completedOvers.length === 0) return;
+                const card = document.createElement('div');
+                card.className = "card p-4 space-y-4 mb-4";
+                card.innerHTML = `<div class="flex justify-between items-center border-b border-border pb-2"><span class="text-xs font-black uppercase text-emerald-500 scale-node">Inning ${idx+1} Summary</span><span class="text-xl font-black scale-node">${inn.runs}-${inn.wickets}</span></div>`;
+                const overList = document.createElement('div');
+                overList.className = "space-y-3";
+                const allOvers = [...inn.completedOvers];
+                if (inn.currentOver.length > 0) allOvers.push(inn.currentOver);
+                allOvers.forEach((over, i) => {
+                    const overRow = document.createElement('div');
+                    overRow.className = "flex items-center gap-3";
+                    overRow.innerHTML = `<span class="text-[9px] font-black text-dim w-8 scale-node">OV ${i+1}</span><div class="flex flex-wrap gap-1"></div>`;
+                    const innerList = overRow.querySelector('div');
+                    over.forEach(ball => {
+                       innerList.appendChild(createBallMiniCircle(ball));
+                    });
+                    overList.appendChild(overRow);
+                });
+                card.appendChild(overList);
+                container.appendChild(card);
+            });
+        }
+
+        function createBallMiniCircle(ball) {
+            const b = document.createElement('div');
+            b.className = `w-7 h-7 rounded-full border flex items-center justify-center text-[9px] font-bold scale-node`;
+            let label = ball.isOverridden ? "!?" : ball.runs;
+            if (ball.isWkt && !(ball.isWide || ball.isNo)) label = ball.runs;
+            b.innerText = label;
+            
+            if (ball.isWkt) { b.classList.add('border-red-500', 'bg-red-500/10', 'text-red-500'); }
+            else if (ball.isNo) { b.classList.add('border-[var(--clr-no)]', 'text-[var(--clr-no)]'); }
+            else if (ball.isWide) { b.classList.add('border-[var(--clr-wide)]', 'text-[var(--clr-wide)]'); }
+            else if (ball.runs === 4 || ball.runs === 6) { b.classList.add('border-[var(--clr-boundary)]', 'text-[var(--clr-boundary)]'); }
+            else { b.classList.add('border-border'); }
+            
+            return b;
+        }
+
+        function showInn1Overview() {
+            const content = document.getElementById('inn1-summary-content');
+            renderFullBreakdown(content, 1);
+            document.getElementById('modal-inn1-summary').classList.remove('hidden');
+        }
+
+        function openReviewBoard() {
+            const content = document.getElementById('review-board-content');
+            renderFullBreakdown(content);
+            showView('view-review');
+        }
+
+        function startOver() { location.reload(); }
+
+        function confirmResetFromFix() {
+            document.getElementById('modal-fix').classList.add('hidden');
+            openModal(
+                "New Match", 
+                "This will clear the scores and a new match can be started. Proceed?", 
+                () => {
+                    SFX.newMatchConfirm(); // Play ascending tone
+                    setTimeout(startOver, 300); // Reload after sound triggers
+                }, 
+                true, 
+                () => {
+                    SFX.cancel();
+                    document.getElementById('modal-fix').classList.remove('hidden');
+                }
+            );
+        }
+
+        function cancelFix() { 
+            // Cancel does not need a sound
+            document.getElementById('modal-fix').classList.add('hidden'); 
+        }
+
+        function resetControls() {
+            selScore = null; selExtra = null; selWkt = false;
+            document.getElementById('custom-run').value = '';
+            document.getElementById('btn-confirm').disabled = true;
+            updateButtonStyles();
+        }
+
+        function calculateOversDisplay(inningIdx = null) {
+            const inn = match.innings[(inningIdx || match.currentInning) - 1];
+            const legals = (inn.completedOvers.length * match.ballsPerOver) + inn.currentOver.filter(b => b.isLegal).length;
+            const ov = Math.floor(legals / match.ballsPerOver);
+            const rem = legals % match.ballsPerOver;
+            return `${ov}.${rem}`;
+        }
+
+        function updateUI() {
+            const inn = match.innings[match.currentInning - 1];
+            document.getElementById('score-display').innerText = `${inn.runs}-${inn.wickets}`;
+            
+            // Fixed: Calculate legals inside updateUI
+            const legals = (inn.completedOvers.length * match.ballsPerOver) + inn.currentOver.filter(b => b.isLegal).length;
+            const ov = Math.floor(legals / match.ballsPerOver);
+            const rem = legals % match.ballsPerOver;
+            document.getElementById('overs-display').innerText = `Overs: ${ov}.${rem} / ${match.totalOvers}`;
+
+            if (match.currentInning === 2) {
+                const target = match.innings[0].runs + 1;
+                document.getElementById('target-runs').innerText = target;
+                document.getElementById('need-runs').innerText = Math.max(0, target - inn.runs);
+                const totalBalls = match.totalOvers * match.ballsPerOver;
+                const remBalls = totalBalls - legals; 
+                document.getElementById('need-balls').innerText = Math.max(0, remBalls);
+            }
+            renderVisuals();
+            autoScrollHistory();
+        }
+
+        function renderVisuals() {
+            const inn = match.innings[match.currentInning - 1];
+            const list = document.getElementById('overs-history-list');
+            list.innerHTML = '';
+            inn.completedOvers.forEach((over, i) => list.appendChild(createOverElement(i + 1, over, true)));
+            if (inn.currentOver.length > 0 || (inn.completedOvers.length < match.totalOvers)) {
+                list.appendChild(createOverElement(inn.completedOvers.length + 1, inn.currentOver, false));
+            }
+            autoScrollHistory();
+        }
+
+        function createOverElement(num, balls, isLocked) {
+            const container = document.createElement('div');
+            container.className = "flex flex-col gap-1";
+            container.innerHTML = `<div class="flex items-center gap-2"><span class="h-[1px] flex-1 bg-border"></span><span class="text-[13px] font-black uppercase text-dim tracking-widest scale-node">Over ${num}</span><span class="h-[1px] flex-1 bg-border"></span></div>`;
+            const row = document.createElement('div');
+            row.className = "flex flex-wrap gap-2 justify-center";
+            balls.forEach(ball => {
+                const circle = document.createElement('div');
+                circle.className = `ball-circle ${isLocked ? 'opacity-70' : ''}`;
+                
+                if (ball.isOverridden) {
+                    circle.innerText = "!?";
+                    circle.classList.add('border-orange-500/50', 'text-orange-400');
+                } else {
+                    let innerContent = "";
+                    const displayRuns = ball.runs + (ball.isWide || ball.isNo ? 1 : 0);
+                    innerContent += `<span class="extra-score">${displayRuns}</span>`;
+                    
+                    if (ball.isWide) innerContent += `<span class="extra-label">WIDE</span>`;
+                    else if (ball.isNo) innerContent += `<span class="extra-label">NO</span>`;
+                    
+                    if (ball.isWkt) innerContent += `<span class="wkt-label">WKT</span>`;
+                    
+                    circle.innerHTML = innerContent;
+
+                    if (!ball.isLegal) circle.classList.add('border-dashed');
+
+                    const scoreText = circle.querySelector('.extra-score');
+                    const xLabel = circle.querySelector('.extra-label');
+                    const wktLabel = circle.querySelector('.wkt-label');
+
+                    if (ball.isCustom) {
+                        circle.style.borderColor = 'rgba(148, 163, 184, 0.4)';
+                        scoreText.style.color = 'rgba(148, 163, 184, 0.6)';
+                    }
+
+                    if (ball.isWkt) {
+                        circle.style.borderColor = 'var(--clr-wkt)';
+                        circle.style.color = 'var(--clr-wkt)';
+                        if (wktLabel) wktLabel.style.color = 'var(--clr-wkt)';
+                        if (scoreText) scoreText.style.color = 'var(--clr-wkt)';
+                    }
+                    
+                    if (ball.isNo) {
+                        if (!ball.isWkt) circle.style.borderColor = 'var(--clr-no)';
+                        if (xLabel) xLabel.style.color = 'var(--clr-no)';
+                        if (!ball.isWkt) scoreText.style.color = 'var(--clr-no)';
+                    }
+
+                    if (ball.isWide) {
+                        if (!ball.isWkt) circle.style.borderColor = 'var(--clr-wide)';
+                        if (xLabel) xLabel.style.color = 'var(--clr-wide)';
+                        if (!ball.isWkt) scoreText.style.color = 'var(--clr-wide)';
+                    }
+
+                    if (!ball.isWkt && !ball.isWide && !ball.isNo && (ball.runs === 4 || ball.runs === 6)) {
+                        circle.style.borderColor = 'var(--clr-boundary)';
+                        if (scoreText) scoreText.style.color = 'var(--clr-boundary)';
+                    }
+                }
+                row.appendChild(circle);
+            });
+            container.appendChild(row);
+            return container;
+        }
+
+        function openFixModal() {
+            SFX.fix(); // Medium Impact
+            const inn = match.innings[match.currentInning - 1];
+            document.getElementById('fix-runs').value = inn.runs;
+            document.getElementById('fix-wkts').value = inn.wickets;
+            document.getElementById('fix-overs').value = inn.completedOvers.length;
+            document.getElementById('fix-balls').value = inn.currentOver.filter(b => b.isLegal).length;
+            document.getElementById('modal-fix').classList.remove('hidden');
+        }
+
+        function applyFix() {
+            const inn = match.innings[match.currentInning - 1];
+            inn.runs = parseInt(document.getElementById('fix-runs').value) || 0;
+            inn.wickets = parseInt(document.getElementById('fix-wkts').value) || 0;
+            const targetOvers = parseInt(document.getElementById('fix-overs').value) || 0;
+            const targetBalls = parseInt(document.getElementById('fix-balls').value) || 0;
+            inn.completedOvers = [];
+            for(let i=0; i < targetOvers; i++) {
+                const ov = [];
+                for(let j=0; j < match.ballsPerOver; j++) ov.push({runs: 0, isLegal: true, totalForBall: 0, isOverridden: true});
+                inn.completedOvers.push(ov);
+            }
+            inn.currentOver = [];
+            for(let i=0; i < targetBalls; i++) inn.currentOver.push({runs: 0, isLegal: true, totalForBall: 0, isOverridden: true});
+            inn.ballHistory = [];
+            SFX.updateHarsh(); // Highest Impact
+            closeModal('modal-fix'); 
+            updateUI(); 
+            showToast("Umpire Fix Applied");
+        }
+
+        function openModal(title, text, confirmFn, isDanger = false, cancelFn = null) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            const btn = document.getElementById('modal-confirm-btn');
+            const cBtn = document.getElementById('modal-cancel-btn');
+            const card = document.querySelector('#modal-generic .card');
+            const titleEl = document.getElementById('modal-title');
+            const textEl = document.getElementById('modal-text');
+            const theme = document.body.getAttribute('data-theme');
+            
+            if (isDanger) {
+                if (theme === 'dark') {
+                    card.classList.add('border-red-500', 'bg-red-950');
+                    titleEl.classList.add('text-white');
+                    textEl.classList.add('text-red-200');
+                } else {
+                    card.classList.add('border-red-700', 'bg-red-600');
+                    titleEl.classList.add('text-white');
+                    textEl.classList.add('text-white');
+                }
+                btn.classList.add('bg-red-600', 'border', 'border-white/30');
+                btn.classList.remove('bg-emerald-500');
+            } else {
+                card.classList.remove('border-red-500', 'bg-red-950', 'border-red-700', 'bg-red-600');
+                titleEl.classList.remove('text-white');
+                textEl.classList.remove('text-red-200', 'text-white');
+                btn.classList.add('bg-emerald-500');
+                btn.classList.remove('bg-red-600', 'border', 'border-white/30');
+            }
+
+            btn.onclick = () => { confirmFn(); closeModal('modal-generic'); };
+            cBtn.onclick = () => { 
+                if(cancelFn) cancelFn();
+                closeModal('modal-generic'); 
+            };
+            document.getElementById('modal-generic').classList.remove('hidden');
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function showView(id) { 
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden')); 
+            document.getElementById(id).classList.remove('hidden'); 
+            window.scrollTo(0,0);
+        }
+        
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 2000);
+        }
+    </script>
+</body>
+</html>
