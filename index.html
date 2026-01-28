@@ -5,7 +5,7 @@
     <meta name="author" content="Gadash / Akila DJ with Gemini AI :)">
     <meta name="copyright" content="Gadash / Akila DJ with Gemini AI :)">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CricWise - Cricket Scoring App by Gadash - Draft 1</title>
+    <title>CricWise - Cricket Scoring App by Gadash - Draft 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -20,7 +20,7 @@
             /* Colors */
             --clr-wkt: #ef4444;
             --clr-wide: #3b82f6;
-            --clr-no: #FF80FF; /* High Lum Blue-shifted Hot Pink */
+            --clr-no: #FF80FF; 
             --clr-boundary: #10b981;
             
             /* Fix Button Colors - Dark Theme */
@@ -30,7 +30,7 @@
             --scale-btn-border: #1e293b; 
             --scale-btn-text: #94a3b8;
 
-            /* Blended Button Colors - Dark Mode (Default) */
+            /* Blended Button Colors - Dark Mode */
             --btn-boundary-text: #bbf7d0; 
             --btn-boundary-bg: rgba(16, 185, 129, 0.2);
             --btn-wkt-text: #fee2e2; 
@@ -38,6 +38,7 @@
 
             /* Scaling */
             --app-scale: 1.0;
+            --half-scale: 1.0;
         }
 
         [data-theme="light"] {
@@ -75,11 +76,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Scaling Utility */
-        .scale-node {
-            font-size: calc(1em * var(--app-scale));
-        }
-
+        .scale-node { font-size: calc(1em * var(--half-scale)); }
         .view { height: 100%; display: flex; flex-direction: column; }
         .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; transition: background 0.2s; }
         
@@ -104,57 +101,23 @@
         .btn-selected { border: 3px solid #f97316 !important; background: var(--primary) !important; color: white !important; }
         .btn-selected-grey { border: 3px solid #cbd5e1 !important; background: #475569 !important; color: white !important; }
 
-        #custom-run::placeholder {
-            font-size: 0.6em;
-            font-weight: normal;
-        }
+        #custom-run::placeholder { font-size: 0.6em; font-weight: normal; }
 
-        .scroll-container {
-            flex: 1; overflow-y: auto; padding-bottom: 20px;
-            scrollbar-width: none;
-            scroll-behavior: smooth;
-        }
+        .scroll-container { flex: 1; overflow-y: auto; padding-bottom: 20px; scrollbar-width: none; scroll-behavior: smooth; }
         .scroll-container::-webkit-scrollbar { display: none; }
 
-        .overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 100; padding: 20px;
-            backdrop-filter: blur(8px);
-        }
-
-        .status-msg {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: var(--primary); color: white; padding: 12px 24px;
-            border-radius: 12px; font-weight: bold; z-index: 200;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-            animation: slideDown 0.3s ease-out;
-        }
-
-        input[type="number"] {
-            background-color: var(--input-bg);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .confirm-over-btn {
-            border: 3px solid rgba(255, 255, 255, 0.7) !important;
-            animation: pulse-border 1.5s infinite;
-        }
-
-        @keyframes pulse-border {
-            0% { border-color: rgba(255, 255, 255, 0.3); }
-            50% { border-color: rgba(255, 255, 255, 1); }
-            100% { border-color: rgba(255, 255, 255, 0.3); }
-        }
-
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(8px); }
+        
+        .status-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 12px; font-weight: bold; z-index: 200; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideDown 0.3s ease-out; }
+        
+        input[type="number"] { background-color: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); text-align: center; }
+        
+        .confirm-over-btn { border: 3px solid rgba(255, 255, 255, 0.7) !important; animation: pulse-border 1.5s infinite; }
+        
+        @keyframes pulse-border { 0% { border-color: rgba(255, 255, 255, 0.3); } 50% { border-color: rgba(255, 255, 255, 1); } 100% { border-color: rgba(255, 255, 255, 0.3); } }
         @keyframes slideDown { from { top: -60px; } to { top: 20px; } }
 
-        .scale-btn-ui {
-            border-color: var(--scale-btn-border) !important;
-            color: var(--scale-btn-text) !important;
-        }
+        .scale-btn-ui { border-color: var(--scale-btn-border) !important; color: var(--scale-btn-text) !important; }
     </style>
 </head>
 <body data-theme="dark">
@@ -163,7 +126,7 @@
         
         <div id="toast" class="hidden status-msg">Score Updated!</div>
 
-        <!-- SCALING CONTROLS: Top Mid -->
+        <!-- SCALING CONTROLS -->
         <div class="absolute top-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-1">
             <button onclick="changeScale(-0.01)" class="w-10 h-7 bg-btn-gray border rounded-lg text-[15px] font-bold btn-tap flex items-center justify-center scale-btn-ui">-</button>
             <button onclick="resetScale()" id="scale-label" class="w-14 h-7 bg-btn-gray border rounded-lg text-[9px] font-black uppercase btn-tap flex items-center justify-center scale-btn-ui">100%</button>
@@ -171,7 +134,7 @@
         </div>
 
         <!-- TOP BAR UI -->
-        <button id="fix-btn" onclick="openFixModal()" class="hidden absolute top-4 left-4 z-50 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg btn-tap" style="background-color: var(--clr-fix-bg)">Fix</button>
+        <button id="fix-btn" onclick="openFixModal()" class="hidden absolute top-4 left-4 z-50 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg btn-tap" style="background-color: var(--clr-fix-bg)">Modify</button>
         <button id="inn1-preview-btn" onclick="showInn1Overview()" class="hidden absolute top-4 right-4 z-50 bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg btn-tap">1ST INN</button>
 
         <!-- VIEW: SETUP -->
@@ -251,7 +214,7 @@
                     <button id="btn-wide" onclick="toggleExtra('W')" class="py-4 bg-btn-gray text-sm font-black rounded-xl uppercase border-2 border-transparent scale-node">Wide</button>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="confirmEndOver()" class="w-20 py-5 bg-btn-gray text-[10px] rounded-2xl uppercase tracking-tighter opacity-60 btn-tap scale-node">Force End Over</button>
+                    <button onclick="confirmEndInningsModal()" class="w-28 py-5 bg-btn-gray text-[12px] rounded-2xl uppercase tracking-tighter font-bold opacity-80 btn-tap scale-node">End Innings</button>
                     <button onclick="confirmUndo()" class="w-14 py-5 bg-btn-gray flex items-center justify-center rounded-2xl btn-tap">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                     </button>
@@ -264,7 +227,7 @@
         <div id="view-summary" class="view hidden">
             <div class="scroll-container px-2 pt-14">
                 <div class="text-center mb-6">
-                    <div id="summary-trophy" class="text-5xl mb-2">🏆</div>
+                    <div id="summary-trophy" class="text-5xl mb-2">??</div>
                     <h2 id="winner-text" class="text-3xl font-black text-emerald-500 uppercase leading-tight px-4 scale-node">Match Over</h2>
                     <p id="winner-desc" class="text-dim font-bold mt-1 px-4 scale-node">Calculating results...</p>
                 </div>
@@ -300,6 +263,33 @@
                     <button id="modal-cancel-btn" onclick="closeModal('modal-generic')" class="flex-1 py-4 bg-btn-gray rounded-xl font-bold scale-node">No</button>
                     <button id="modal-confirm-btn" class="flex-1 py-4 bg-emerald-500 text-white rounded-xl font-bold scale-node">Yes</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- MODAL: END INNINGS REASON -->
+        <div id="modal-inning-end" class="overlay hidden">
+            <div class="card p-8 w-full max-w-[360px] text-center space-y-4 border-2 bg-slate-800 border-slate-600">
+                <h3 class="text-xl font-black text-white scale-node">End Inning?</h3>
+                <p class="text-slate-400 text-sm scale-node">Do you want to end the inning? Choose the reason, or cancel.</p>
+                <div class="flex flex-col gap-2">
+                    <button onclick="finishInningsManual('all-out')" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold scale-node">Yes, End. All Out.</button>
+                    <button onclick="finishInningsManual('other')" class="w-full py-4 bg-slate-600 hover:bg-slate-500 text-white rounded-xl font-bold scale-node">Yes, End (Other Reasons).</button>
+                    <div class="flex gap-2">
+                        <button onclick="closeModal('modal-inning-end')" class="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl font-bold scale-node">No</button>
+                        <button onclick="closeModal('modal-inning-end')" class="flex-1 py-3 bg-slate-700 text-slate-300 rounded-xl font-bold scale-node">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: INN 1 OVERVIEW -->
+        <div id="modal-inn1-summary" class="overlay hidden">
+            <div class="card w-full max-w-sm flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-border flex justify-between items-center">
+                    <h3 class="text-xl font-black text-emerald-500 uppercase scale-node">Inn 1 Overview</h3>
+                    <button onclick="closeModal('modal-inn1-summary')" class="p-2 opacity-50">?</button>
+                </div>
+                <div id="inn1-summary-content" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
             </div>
         </div>
 
@@ -353,7 +343,12 @@
         }
         function updateAppScale() {
             document.documentElement.style.setProperty('--app-scale', currentScale);
+            const moderatedScale = 1 + (currentScale - 1) * 0.5;
+            document.documentElement.style.setProperty('--half-scale', moderatedScale);
             document.getElementById('scale-label').innerText = Math.round(currentScale * 100) + '%';
+            if (match.innings[match.currentInning - 1].ballHistory.length > 0 || match.innings[match.currentInning - 1].completedOvers.length > 0) {
+                renderVisuals();
+            }
         }
 
         // --- AUDIO ENGINE ---
@@ -378,26 +373,26 @@
         }
 
         const SFX = {
-            fix: () => playTone(440, 0.2, 'sine', 0.35), // Medium Impact
+            fix: () => playTone(440, 0.2, 'sine', 0.35), 
             confirm: () => {
                 playTone(440, 0.1, 'sine', 0.3);
                 setTimeout(() => playTone(554, 0.1, 'sine', 0.3), 80);
                 setTimeout(() => playTone(659, 0.1, 'sine', 0.3), 160);
             },
-            cancel: () => {
-                playTone(660, 0.15, 'sine', 0.2);
-                setTimeout(() => playTone(500, 0.15, 'sine', 0.2), 150);
-            },
+            cancel: () => { }, 
             updateHarsh: () => {
-                // High Impact / Highest Volume
                 playTone(220, 0.2, 'square', 0.6);
                 setTimeout(() => playTone(220, 0.2, 'square', 0.6), 150);
                 setTimeout(() => playTone(180, 0.4, 'square', 0.9), 300);
             },
-            forceEndOver: () => {
-                // Similar to updateHarsh but different character (warning tone)
-                playTone(330, 0.15, 'sawtooth', 0.7);
-                setTimeout(() => playTone(220, 0.3, 'sawtooth', 0.7), 150);
+            endInningManual: () => {
+                playTone(330, 0.15, 'sawtooth', 0.6);
+                setTimeout(() => playTone(220, 0.4, 'sawtooth', 0.6), 160);
+            },
+            newMatchConfirm: () => {
+                playTone(523.25, 0.1, 'sine', 0.7); 
+                setTimeout(() => playTone(659.25, 0.1, 'sine', 0.7), 100); 
+                setTimeout(() => playTone(783.99, 0.2, 'sine', 0.8), 200); 
             },
             pop: () => playTone(800, 0.1, 'sine', 0.05)
         };
@@ -439,16 +434,8 @@
 
         function startMatch() {
             initAudio();
-            const ovs = parseInt(document.getElementById('input-overs').value);
-            const bls = parseInt(document.getElementById('input-balls').value);
-
-            if (isNaN(ovs) || ovs < 1 || ovs > 99 || isNaN(bls) || bls < 1 || bls > 9) {
-                showToast("Invalid match settings");
-                return;
-            }
-
-            match.totalOvers = ovs;
-            match.ballsPerOver = bls;
+            match.totalOvers = parseInt(document.getElementById('input-overs').value) || 5;
+            match.ballsPerOver = parseInt(document.getElementById('input-balls').value) || 6;
             showView('view-scoring');
             document.getElementById('fix-btn').classList.remove('hidden');
             updateUI();
@@ -477,8 +464,15 @@
             const legals = inn.currentOver.filter(b => b.isLegal).length;
             const btn = document.getElementById('btn-confirm');
             
-            if (selExtra === null && (legals + 1) === match.ballsPerOver) {
-                btn.innerText = "Confirm & End Over";
+            const isLastOver = inn.completedOvers.length === (match.totalOvers - 1);
+            const isLastBall = (legals + 1) === match.ballsPerOver;
+
+            if (selExtra === null && isLastBall) {
+                if (isLastOver) {
+                    btn.innerText = "Confirm & End Inning";
+                } else {
+                    btn.innerText = "Confirm & End Over";
+                }
                 btn.classList.add('confirm-over-btn');
             } else {
                 btn.innerText = "Confirm";
@@ -517,6 +511,9 @@
                 isCustom: selScore === 'custom'
             };
 
+            const isLastBall = (inn.currentOver.filter(b => b.isLegal).length + 1) === match.ballsPerOver;
+            const isLastOver = inn.completedOvers.length === (match.totalOvers - 1);
+
             inn.runs += ball.totalForBall;
             if (ball.isWkt) inn.wickets += 1;
             inn.currentOver.push(ball);
@@ -525,8 +522,13 @@
             SFX.pop();
 
             const legals = inn.currentOver.filter(b => b.isLegal).length;
+            
             if (legals >= match.ballsPerOver) {
-                forceEndOver();
+                 if (isLastOver) {
+                     finishInnings();
+                 } else {
+                     forceEndOver();
+                 }
             } else {
                 if (inn.wickets >= WICKET_LIMIT) {
                     finishInnings();
@@ -553,6 +555,16 @@
 
             updateUI();
             autoScrollHistory();
+        }
+
+        function confirmEndInningsModal() {
+            document.getElementById('modal-inning-end').classList.remove('hidden');
+        }
+
+        function finishInningsManual(reason) {
+            closeModal('modal-inning-end');
+            SFX.endInningManual(); 
+            finishInnings();
         }
 
         function autoScrollHistory() {
@@ -703,8 +715,8 @@
                 "New Match", 
                 "This will clear the scores and a new match can be started. Proceed?", 
                 () => {
-                    SFX.cancel();
-                    startOver();
+                    SFX.newMatchConfirm(); // Play ascending tone
+                    setTimeout(startOver, 300); // Reload after sound triggers
                 }, 
                 true, 
                 () => {
@@ -715,7 +727,7 @@
         }
 
         function cancelFix() { 
-            SFX.cancel(); 
+            // Cancel does not need a sound
             document.getElementById('modal-fix').classList.add('hidden'); 
         }
 
@@ -737,13 +749,20 @@
         function updateUI() {
             const inn = match.innings[match.currentInning - 1];
             document.getElementById('score-display').innerText = `${inn.runs}-${inn.wickets}`;
-            document.getElementById('overs-display').innerText = `Overs: ${calculateOversDisplay()} / ${match.totalOvers}`;
+            
+            // Fixed: Calculate legals inside updateUI
+            const legals = (inn.completedOvers.length * match.ballsPerOver) + inn.currentOver.filter(b => b.isLegal).length;
+            const ov = Math.floor(legals / match.ballsPerOver);
+            const rem = legals % match.ballsPerOver;
+            document.getElementById('overs-display').innerText = `Overs: ${ov}.${rem} / ${match.totalOvers}`;
+
             if (match.currentInning === 2) {
                 const target = match.innings[0].runs + 1;
-                const need = target - inn.runs;
-                const ballsRemaining = calculateRemainingBalls();
-                document.getElementById('need-runs').innerText = Math.max(0, need);
-                document.getElementById('need-balls').innerText = Math.max(0, ballsRemaining);
+                document.getElementById('target-runs').innerText = target;
+                document.getElementById('need-runs').innerText = Math.max(0, target - inn.runs);
+                const totalBalls = match.totalOvers * match.ballsPerOver;
+                const remBalls = totalBalls - legals; 
+                document.getElementById('need-balls').innerText = Math.max(0, remBalls);
             }
             renderVisuals();
             autoScrollHistory();
@@ -754,9 +773,10 @@
             const list = document.getElementById('overs-history-list');
             list.innerHTML = '';
             inn.completedOvers.forEach((over, i) => list.appendChild(createOverElement(i + 1, over, true)));
-            if (inn.currentOver.length > 0 || inn.completedOvers.length < match.totalOvers) {
+            if (inn.currentOver.length > 0 || (inn.completedOvers.length < match.totalOvers)) {
                 list.appendChild(createOverElement(inn.completedOvers.length + 1, inn.currentOver, false));
             }
+            autoScrollHistory();
         }
 
         function createOverElement(num, balls, isLocked) {
@@ -901,13 +921,6 @@
             window.scrollTo(0,0);
         }
         
-        function confirmEndOver() { 
-            openModal("Force End Over", "Ending this over manually. Proceed?", () => {
-                SFX.forceEndOver(); // Special Impact Tone
-                forceEndOver();
-            }, true); 
-        }
-
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg; t.classList.remove('hidden');
